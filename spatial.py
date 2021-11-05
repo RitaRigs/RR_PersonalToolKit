@@ -1,7 +1,7 @@
 import pymel.core as pm
 import pymel.core.datatypes as dt
 
-def aim_at_target(target, aim):
+def aim_at_target(target, aim, aim_ax = 'x', up_ax ='y', up_vec = None, up_obj = None):
     #doc strings
     '''
     aim_at_target:
@@ -24,9 +24,20 @@ def aim_at_target(target, aim):
     #identify vectors
     aim_vec = (aim_pos - target_pos)
     aim_vec.normalize()
-    up_vec = dt.Vector(0,-1,0)
 
-    #remind Retsyn to tell me that doing my own math is BAD. Have Maya do the work for you. Pointing Float Precision.
+    #This is here if I either
+    # 1)DECIDE to keep the up vector at DEFAULT  
+    # 2)Have an obj define my up_vec 
+    # 3)Explicitly define the up vector in the arg of aim_at_target
+    if (up_obj == None):
+        if (up_vec == None):
+            up_vec = dt.Vector(0,-1,0)
+        else:
+            up_vec = dt.Vector(up_vec)
+    else:
+        up_obj_pos = dt.Vector(pm.xform(up_obj, t=True, q=True, ws=True))
+        up_vec = (target_pos - up_obj_pos)
+
     #finding the cross product
     cross_vec = aim_vec.cross(up_vec)
     cross_vec.normalize()
@@ -37,18 +48,17 @@ def aim_at_target(target, aim):
     m0= list(aim_vec)
     m1= list(up_vec)
     m2= list(cross_vec)
-
-    #constant values in matrix
-    m3= [0,0,0,1.0]
-
-    #input values into matrix
-    m0.append(target_pos[0])
-    m1.append(target_pos[1])
-    m2.append(target_pos[2])
+    m3= list(target_pos)
+    
+    #input values of constants (the fourth colomn of the matrix)
+    m0.append(0.0)
+    m1.append(0.0)
+    m2.append(0.0)
+    m3.append(1.0)
     
     #creating Matrix
     target_matrix = dt.Matrix(m0,m1,m2,m3)
 
     #orient and move "target" in viewport
-    pm.xform(target, ws=True, m= target_matrix)
+    target.setMatrix(target_matrix, worldSpace=True)
 
