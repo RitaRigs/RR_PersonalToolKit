@@ -27,12 +27,12 @@ def pv_build(base_jnt, mid_jnt, end_jnt, mag = 0.1):
         pv_loc.scaleY.set(pv_loc.scaleX.get())
         pv_loc.scaleZ.set(pv_loc.scaleX.get())
         
-def fk_to_ik(side, limb, fk_ctrls= None, ik_jnts= None):
+def fk_to_ik(side, limb, ctrl_tag = None, jnt_tag = None, fk_ctrls= None, ik_jnts= None, order="s_n_t"):
     
     #specify the limb
-    if(limb=='leg'):
-        target_list=["hip", "knee", "ankle"]
-    elif(limb=='arm'):
+    if(limb.upper() =='LEG'):
+        target_list=["hip", "knee","ankle"]
+    elif(limb.upper() =='ARM'):
         target_list=["shoulder","elbow","wrist"]
     else:
         pm.warning("Is it an arm or a leg?")
@@ -48,20 +48,51 @@ def fk_to_ik(side, limb, fk_ctrls= None, ik_jnts= None):
         local_fk_ctrls_dict = const.fk_limbs_dict.copy()
     else:
         local_fk_ctrls_dict = fk_ctrls.copy()
+
+    #specify the suffix/type
+    if(ctrl_tag is None):
+        ctrl_tag=const.suffix_dict['control']
+    if(jnt_tag is None):
+        jnt_tag=const.suffix_dict['joint']
     
-    if(side != None):
+    if(side is not None):
         if(side.upper() in ['L','LEFT','L_','_L', 'LFT','LT']):
-            side_token=const.side_dict['left']
+            side_token=const.side_dict['Left']
         elif(side.upper() in ['R','R_','_R','RIGHT','RGT','RT']):
-            side_token=const.side_dict['right']
+            side_token=const.side_dict['Right']
         elif(side.upper() in ['C','C_','_C','CENTER','CENTRE','CNT','CT']):
-            side_token=const.side_dict['centre']
+            side_token=const.side_dict['Centre']
     else:
         pm.error("No side specified.")
     
-        
-        
-
+    ik_part_list=[]
+    fk_part_list=[]
+    for part in target_list:
+        ik_node_string = ''
+        fk_node_string = ''
+        for char in order:
+            if(char == 's'):
+                ik_node_string += side_token
+                fk_node_string += side_token
+            elif(char == 'n'):
+                ik_node_string += local_ik_jnts_dict[part]
+                fk_node_string += local_fk_ctrls_dict[part]
+            elif(char == 't'):
+                ik_node_string += jnt_tag
+                fk_node_string += ctrl_tag
+            elif(char == '_'):
+                if(len(ik_node_string)> 0):
+                    if(ik_node_string[-1]!='_'):
+                        ik_node_string += '_'
+                if(len(fk_node_string)> 0):
+                    if(fk_node_string[-1]!='_'):
+                        fk_node_string += '_'
+            else:
+                pm.error("Invalid character in order arg. Must be 's','n','t', or '_' . ")
+        ik_part_list.append(ik_node_string)
+        fk_part_list.append(fk_node_string)
+    print(ik_part_list)
+    print(fk_part_list)
 
 def ik_to_fk():
     pass
